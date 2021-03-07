@@ -7,12 +7,6 @@ import random
 from nltk.stem import WordNetLemmatizer 
 from nltk.corpus import wordnet
 
-# TODO poista tää
-def main():
-    gmbfile = open('/scratch/lt2222-v21-resources/GMB_dataset.txt', "r")
-    inputdata = preprocess(gmbfile)
-    instances = create_instances(inputdata)
-
 # Module file with functions that you fill in so that they can be
 # called by the notebook.  This file should be in the same
 # directory/folder as the notebook when you test with the notebook.
@@ -23,9 +17,6 @@ def main():
 # code with reasonable comments.
 
 # Function for Part 1
-# To preprocess the text (lowercase and lemmatize; punctuation can be preserved as it gets its own rows).
-# You can return the data in any indexable form you like. You can also choose to remove 
-# infrequent or uninformative words to reduce the size of the feature space.  
 def preprocess(inputfile):
     # NOTE gmbfile is opened and closed in notebook
     result = []
@@ -63,15 +54,6 @@ def get_wordnet_pos(treebank_tag):
         return wordnet.NOUN
 
 # Code for part 2
-
-# create instances from every from every identified named entity in the text with the type 
-# of the NE as the class, and a surrounding context of five words on either side as the features. 
-
-#You will create a collection of Instance objects. Remember to consider the case where the NE is 
-#at the beginning of a sentence or at the end, or close to either (you can create a special start 
-#token for that). You can also start counting from before the B end of the NE mention and after the 
-#last I of the NE mention. That means that the instances should include things before and after the 
-#named entity mention, but not the named entity text itself.
 class Instance:
     def __init__(self, neclass, features):
         self.neclass = neclass
@@ -92,14 +74,21 @@ def create_instances(data):
         if neclass != "O":
             neclass = neclass[2:5]
 
-            # TODO You can also start counting from before the B end of the NE mention and after the 
-            #last I of the NE mention. That means that the instances should include things before and after the 
-            #named entity mention, but not the named entity text itself.
+            # TODO eg hyde park should be one or two instances?
+
+            # get indices to include words before and after the NE but not parts of the NE
+            prev_start_index = i-5 if i-5 > 0 else 0
+            next_start_index = i+1
+
+            while data[prev_start_index+4][4].startswith("I") or data[prev_start_index+4][4].startswith("B"):
+                prev_start_index = prev_start_index - 1
+
+            while data[next_start_index][4].startswith("I"):
+                next_start_index = next_start_index + 1
 
             # get previous and next 5 tokens
-            # TODO else data[0:i] correct?
-            prev_items = items_to_features(data[i-5:i] if i-5 > 0 else data[0:i], item[1], "s") 
-            next_items = items_to_features(data[i+1:i+6], item[1], "e")
+            prev_items = items_to_features(data[prev_start_index:prev_start_index+5] , item[1], "s") 
+            next_items = items_to_features(data[next_start_index:next_start_index+5], item[1], "e")
             features = prev_items + next_items
             
             instances.append(Instance(neclass, features))
@@ -126,9 +115,6 @@ def is_in_context(index, item):
     return item[1] == index
 
 # Code for part 3
-# create a data table with "document" vectors representing each instance and split the table 
-#into training and testing sets and random with an 80%/20% train/test split.
-
 def create_table(instances):
     word_list = set([f for x in instances for f in x.features])
     df_dict = {"class": [x.neclass for x in instances]}
@@ -137,44 +123,8 @@ def create_table(instances):
     for i, word in enumerate(word_list):
         df_dict[i] = [inst.features.count(word) for inst in instances]
 
-        # what if word is class? use numbers as col names instead of words?
-        # if word != "classname":
-        #     df_dict[word] = [inst.features.count(word) for inst in instances]
-    
     df = pd.DataFrame(df_dict)
     return df
-
-# def create_table(instances):
-#     # df = pd.DataFrame()
-#     word_list = set([f for x in instances for f in x.features])
-    # word_counts = {}
-    # # get word frequencies
-    # for inst in instances:
-    #     for feat in inst.features:
-    #         if feat not in word_counts:
-    #             word_counts[feat] = 0
-    #         word_counts[feat] += 1
-
-    # print(len(word_counts))
-    # TODO top frequent words?
-    # build data frame
-    # df['class'] = [x.neclass for x in instances]
-    #df['class'] = [random.choice(['art','eve','geo','gpe','nat','org','per','tim']) for i in range(100)]
-
-    # classnames = {"class": [x.neclass for x in instances]}
-    # print(len(classnames["class"]))
-    # word_dict = {}
-    # # construct dict for dataframe
-    # for word in word_list:
-    #     word_dict[word] = [inst.features.count(word) for inst in instances]
-
-    # df = pd.DataFrame({**classnames, **word_dict})
-    # # each column represents a word and the value is the occurence of the word in the features
-    # # for i in range(0, len(instances)):
-    # #     for word in word_list:
-    # #         df.loc[i, word] = instances[i].features.count(word) #/ word_counts[word]
-    # #         # df[i] = npr.random(100)
-    # return df
 
 def ttsplit(bigdf):
     # select 80% of rows, get the remaining 20% by dropping train data from
