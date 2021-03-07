@@ -92,8 +92,6 @@ def create_instances(data):
         if neclass != "O":
             neclass = neclass[2:5]
 
-            # TODO consider features upto the next NE, not beyond???? WHY?
-
             # TODO You can also start counting from before the B end of the NE mention and after the 
             #last I of the NE mention. That means that the instances should include things before and after the 
             #named entity mention, but not the named entity text itself.
@@ -133,15 +131,15 @@ def is_in_context(index, item):
 
 def create_table(instances):
     word_list = set([f for x in instances for f in x.features])
-    df_dict = {"classname": [x.neclass for x in instances]}
-
-    # TODO rename classname back to class
+    df_dict = {"class": [x.neclass for x in instances]}
 
     # construct dict for dataframe
-    for word in word_list:
-        # TODO what if word is class? use numbers as col names instead of words?
-        if word != "classname":
-            df_dict[word] = [inst.features.count(word) for inst in instances]
+    for i, word in enumerate(word_list):
+        df_dict[i] = [inst.features.count(word) for inst in instances]
+
+        # what if word is class? use numbers as col names instead of words?
+        # if word != "classname":
+        #     df_dict[word] = [inst.features.count(word) for inst in instances]
     
     df = pd.DataFrame(df_dict)
     return df
@@ -179,26 +177,18 @@ def create_table(instances):
     # return df
 
 def ttsplit(bigdf):
-    # TODO randomize?
+    # select 80% of rows, get the remaining 20% by dropping train data from
+    # complete dataframe, randomize with sample()
     df_train = bigdf.sample(frac=0.8).reset_index()
-    df_test = bigdf.drop(df_train.index).reset_index()
-
-#     df_train = pd.DataFrame()
-#     df_train['class'] = [random.choice(['art','eve','geo','gpe','nat','org','per','tim']) for i in range(80)]
-#     for i in range(3000):
-#         df_train[i] = npr.random(80)
-
-#     df_test = pd.DataFrame()
-#     df_test['class'] = [random.choice(['art','eve','geo','gpe','nat','org','per','tim']) for i in range(20)]
-#     for i in range(3000):
-#         df_test[i] = npr.random(20)
-        
-    return df_train.drop('classname', axis=1).to_numpy(), df_train['classname'], df_test.drop('classname', axis=1).to_numpy(), df_test['classname']
+    df_test = bigdf.drop(df_train.index).sample(frac=1).reset_index()
+    return df_train.drop('class', axis=1).to_numpy(), df_train['class'], df_test.drop('class', axis=1).to_numpy(), df_test['class']
 
 # Code for part 5
 def confusion_matrix(truth, predictions):
-    print("I'm confusing.")
-    return "I'm confused."
+    actual = pd.Series(truth, name='Actual')
+    predicted = pd.Series(predictions, name='Predicted')
+    df = pd.crosstab(actual, predicted, rownames=['Actual'], colnames=['Predicted'], margins=True)
+    return df
 
 # Code for bonus part B
 def bonusb(filename):
