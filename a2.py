@@ -18,20 +18,11 @@ from nltk.corpus import wordnet
 
 # Function for Part 1
 def preprocess(inputfile):
-    # NOTE gmbfile is opened and closed in notebook
     result = []
     lemmatizer = WordNetLemmatizer() 
 
-    #https://www.geeksforgeeks.org/python-lemmatization-with-nltk/
-    #https://stackoverflow.com/questions/15586721/wordnet-lemmatization-and-pos-tagging-in-python
-    #https://stackoverflow.com/questions/5364493/lemmatizing-pos-tagged-words-with-nltk
-    #https://www.machinelearningplus.com/nlp/lemmatization-examples-python/
-
-    # TODO You can also choose to remove infrequent or uninformative words to reduce the size of the feature space. 
-
     # skip first/header line
     for line in inputfile.readlines()[1:]:
-        # TODO should ne's be lemmatized..?
         sent_list = line.split()
         sent_list[2] = lemmatizer.lemmatize(sent_list[2].lower(), get_wordnet_pos(sent_list[3]))
         result.append(sent_list)
@@ -39,16 +30,14 @@ def preprocess(inputfile):
     return result
 
 # POS-tags are in Penn Treebank format - lemmatizer uses wordnet format
-# get POS-tag in wordnet format
-def get_wordnet_pos(treebank_tag):
-    # TODO make better/add more tags (default is now N)
-    if treebank_tag.startswith('J'):
+# get POS-tag in wordnet format (which there are only four of)
+# handle conversion of tags for adjectives, verbs and adverbs and fallback to noun-tag
+def get_wordnet_pos(pt_pos_tag):
+    if pt_pos_tag.startswith('J'):
         return wordnet.ADJ
-    elif treebank_tag.startswith('V'):
+    elif pt_pos_tag.startswith('V'):
         return wordnet.VERB
-    elif treebank_tag.startswith('N'):
-        return wordnet.NOUN
-    elif treebank_tag.startswith('R'):
+    elif pt_pos_tag.startswith('R'):
         return wordnet.ADV
     else:
         return wordnet.NOUN
@@ -73,8 +62,6 @@ def create_instances(data):
 
         if neclass != "O":
             neclass = neclass[2:5]
-
-            # TODO eg hyde park should be one or two instances?
 
             # get indices to include words before and after the NE but not parts of the NE
             prev_start_index = i-5 if i-5 > 0 else 0
@@ -137,7 +124,21 @@ def ttsplit(bigdf):
 def confusion_matrix(truth, predictions):
     actual = pd.Series(truth, name='Actual')
     predicted = pd.Series(predictions, name='Predicted')
-    df = pd.crosstab(actual, predicted, rownames=['Actual'], colnames=['Predicted'], margins=True)
+    
+    df = pd.crosstab(actual, predicted) # create matrix
+
+    # add classes that have not been predicted with 0 values
+    missing_predictions = list(set(truth) - set(predictions))
+    
+    for mp in missing_predictions:
+        df[mp] = 0
+
+    df = df.sort_index(axis=1) # sort columns
+
+    # add totals of columns and rows
+    df['Total'] = df.sum(axis=1)
+    df.loc['Total']= df.sum()
+
     return df
 
 # Code for bonus part B
