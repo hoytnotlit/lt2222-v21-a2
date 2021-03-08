@@ -6,7 +6,7 @@ Your name: Minerva (gussuvmi)
 
 Notes
 
-Due to the design choice of not including parts of NE's in the context features, NE's with multiple words will get multiple instances. For example "hyde park" gets two instances where both instances are identical. This could be changed by skipping the next parts of the NE but I deemed this as desired functionality because each individual word of the NE should be considered in training.
+Due to the design choice of not including parts of NE's in the context features, NE's with multiple words will get multiple instances. For example "hyde park" gets two instances where both instances are identical. This could be changed by skipping the next parts of the NE but I deemed this as desired functionality because each individual part of the NE should be considered in training.
             
 
 Observations
@@ -19,4 +19,4 @@ However I ran the code again the next day and the predictions were bad again so 
 
 The predictions on the training data are unsurprisingly better than those for the test data. This is because the training data is biased because the model has seen it before. This results in more correct guesses when using the training data for testing purposes. More classes are being guessed for training data than for testing data.
 
-In both cases, some classes are predicted less well than others. Classes such as "art" and "nat" have just a few test cases (test: 4 and 2 train: 65 and 20 on my try when writing this) whereas classes such as "geo" and "per" have more cases (test: 530 and 499 train: 1996 and 1866). Classes with more cases are being predicted correctly more often than those with fewer cases. Classes with more cases are also predicted as incorrect classes more, it seems. For example the class "tim" has more incorrect predictions as "geo" (test: 154 train: 619) than any other class. To compare the correct guesses for "tim" are 16 for test data and 76 for train data.
+In both cases, some classes are predicted less well than others. Classes such as "art" and "nat" have just a few test cases (test: 4 and 2 train: 65 and 20 on my try when writing this) whereas classes such as "geo" and "per" have more cases (test: 530 and 499 train: 1996 and 1866). Classes with more cases are being predicted correctly more often than those with fewer cases. Classes with more cases are also predicted as incorrect classes more, it seems. For example the class "tim" has the most incorrect predictions as "geo" (test: 154 train: 619). To compare the correct guesses for "tim" are 16 for test data and 76 for train data.
